@@ -1,0 +1,21 @@
+[project]
+name = "agents"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Nishith P",email = "nishithp11@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.13,<4.0"
+dependencies = [
+    "google-adk (>=1.15.1,<2.0.0)",
+    "python-dotenv (>=1.1.1,<2.0.0)",
+    "asyncio (>=4.0.0,<5.0.0)",
+    "uvicorn (>=0.37.0,<0.38.0)",
+    "fastapi (>=0.118.0,<0.119.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

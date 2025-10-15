@@ -1,0 +1,5 @@
+__pycache__
+.env
+.env.sample
+sessions.db
+.venv

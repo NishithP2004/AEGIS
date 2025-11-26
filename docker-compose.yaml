@@ -1,0 +1,19 @@
+services:
+    agent:
+      image: nishithp/aegis-agent
+      build: ./agents
+      env_file: ./agents/.env
+      ports:
+        - 8000:8000
+      restart: unless-stopped
+    
+    dashboard:
+      image: nishithp/aegis-dashboard
+      build: ./dashboard
+      volumes: 
+        - ./dashboard/.streamlit/secrets.toml:/app/.streamlit/secrets.toml
+      restart: unless-stopped
+      ports: 
+        - 8501:8501
+      depends_on:
+        - agent

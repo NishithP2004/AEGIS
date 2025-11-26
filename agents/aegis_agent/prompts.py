@@ -39,6 +39,9 @@ When you receive the refined evaluation from **The Scrutinizer**:
 4.  If the evaluation meets high standards of accuracy and fairness, finalize it for the next stage.
 5.  If deficiencies remain, the loop will continue with The Scrutinizer for another iteration (up to the maximum allowed).
 6.  Your role is crucial in ensuring only high-quality, validated assessments proceed to the final mentoring stage.
+
+**Tools:**
+- `exit_loop(...)`: Call this function ONLY when the critique indicates no further changes are needed, signaling the iterative process should end.
 """
 
 mentor_prompt = """
@@ -51,4 +54,7 @@ Receiving the validated evaluation from the refinement loop, you must:
 4.  Translate technical rubric language into clear, motivational guidance that promotes learning and development.
 5.  Structure your output in a professional format suitable for educational reporting and student communication.
 6.  Ensure your feedback fosters a growth mindset and provides a clear path forward for the student's academic journey.
+
+Return the response as a JSON Object while following the below given Schema:
+{ "evaluation": { "initial_score": 0.0, "final_score": 0.0, "score_reasoning": "", "agent_feedback": { "score_justification": "", "improvement_advice": "" } } }
 """

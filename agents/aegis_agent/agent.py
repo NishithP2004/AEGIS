@@ -1,16 +1,10 @@
 import os
 import logging
 from dotenv import load_dotenv
-
-from google.adk.agents import Agent, LoopAgent, BaseAgent, SequentialAgent
-from google.adk.tools.agent_tool import AgentTool
+from google.adk.agents import Agent, LoopAgent, SequentialAgent
 from google.adk.planners import PlanReActPlanner
-from google.genai import types
-from google.adk.runners import InMemoryRunner
-from google.adk.agents.invocation_context import InvocationContext
 from google.adk.tools.tool_context import ToolContext
-from typing import AsyncGenerator, Optional
-from google.adk.events import Event, EventActions
+from pydantic import BaseModel, Field
 
 from .prompts import *
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", ".env"))
@@ -28,6 +22,19 @@ STATE_CURRENT_DOC = "cuurent_doc"
 STATE_CRITICISM = "criticism"
 COMPLETION_PHASE = "No major issues found"
 
+class AgentFeedback(BaseModel):
+    score_justification: str
+    improvement_advice: str
+
+class Evaluation(BaseModel):
+    initial_score: float
+    final_score: float
+    score_reasoning: str
+    agent_feedback: AgentFeedback
+
+class EvaluationOutput(BaseModel):
+    evaluation: Evaluation
+
 def exit_loop(tool_context: ToolContext):
   """Call this function ONLY when the critique indicates no further changes are needed, signaling the iterative process should end."""
   print(f"  [Tool Call] exit_loop triggered by {tool_context.agent_name}")
@@ -40,7 +47,6 @@ arbiter_agent = Agent(
   description=arbiter_desc,
   model=GEMINI_MODEL,
   instruction=arbiter_prompt,
-  output_key=STATE_CURRENT_DOC,
   planner=PlanReActPlanner()
 )
 
@@ -49,7 +55,6 @@ scrutinizer_agent = Agent(
   description=scrutinizer_desc,
   model=GEMINI_MODEL,
   instruction=scrutinizer_prompt,
-  output_key=STATE_CRITICISM,
   planner=PlanReActPlanner()
 )
 
@@ -58,7 +63,8 @@ validator_agent = Agent(
   description=validator_desc,
   model=GEMINI_MODEL,
   instruction=validator_prompt,
-  planner=PlanReActPlanner()
+  planner=PlanReActPlanner(),
+  tools=[exit_loop],
 )
 
 mentor_agent = Agent(
@@ -66,7 +72,9 @@ mentor_agent = Agent(
   description=mentor_desc,
   model=GEMINI_MODEL,
   instruction=mentor_prompt,
-  planner=PlanReActPlanner()
+  planner=PlanReActPlanner(),
+  output_key="evaluation_output",
+  output_schema=EvaluationOutput
 )
 
 refinement_loop = LoopAgent(

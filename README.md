@@ -48,8 +48,27 @@ AEGIS/
 
 2.  **Environment Configuration:**
 
-    Ensure you have the necessary environment variables set up. You may need to configure your Google Cloud credentials for the agents to function correctly.
-    *   Check `agents/.env` (create if it doesn't exist) for required variables like `GOOGLE_API_KEY` or `PROJECT_ID`.
+    Ensure you have the necessary environment variables set up.
+
+    *   **Backend (Agents):**
+        Create a `.env` file in the `agents/` directory with the following variables:
+        ```env
+        GOOGLE_API_KEY=your_google_api_key
+        PROJECT_ID=your_google_cloud_project_id
+        ```
+
+    *   **Frontend (Dashboard):**
+        Create a `secrets.toml` file in the `dashboard/.streamlit/` directory (create the folder if it doesn't exist). This is required for the dashboard to communicate with the agent service within the Docker network.
+        ```toml
+        API_BASE_URL = "http://agent:8000"
+        
+        # Optional: Redis Configuration for History/Analytics
+        # REDIS_HOST="your_redis_host"
+        # REDIS_PORT=6379
+        # REDIS_USERNAME="your_redis_username"
+        # REDIS_PASSWORD="your_redis_password"
+        ```
+        *Note: If you are running the dashboard locally (outside Docker), set `API_BASE_URL = "http://localhost:8000"`.*
 
 3.  **Run with Docker Compose:**
 
@@ -70,19 +89,26 @@ AEGIS/
 1.  **Access the Dashboard:**
     Open your web browser and navigate to [http://localhost:8501](http://localhost:8501).
 
-2.  **Submit an Assignment:**
+2.  **Submit an Assignment (Text):**
     *   Go to the **📝 Submit** tab.
     *   Enter an **Assignment ID** (e.g., `CS101-Midterm`).
     *   Paste the **Grading Rubric / Answer Key**.
     *   Paste the **Student Answer**.
     *   Click **🚀 Submit for Grading**.
 
-3.  **View Results:**
+3.  **Submit an Assignment (OCR):**
+    *   Go to the **📄 OCR & Grade** tab.
+    *   Enter an **Assignment ID**.
+    *   Upload exactly two PDF files (Answer Script and Rubric/Key).
+    *   Click **📤 Upload & Process OCR**.
+
+4.  **View Results:**
     *   Once grading is complete, the results will be displayed in the **📊 Results** tab.
     *   You can see the final score, detailed feedback from different agents, and score reasoning.
 
-4.  **Review History:**
+5.  **Review History & Analytics:**
     *   Check the **📚 History** tab to see past grading sessions.
+    *   Check the **📈 Analytics** tab for grading statistics.
 
 ## 🔧 API Endpoints
 

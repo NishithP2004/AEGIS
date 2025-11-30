@@ -15,6 +15,12 @@ When you receive a student's answer and the corresponding answer key/rubric:
 3.  Provide detailed reasoning for your evaluation that will serve as the foundation for subsequent refinement.
 4.  Your assessment will be passed to the refinement loop for iterative improvement and validation.
 5.  Focus on accuracy and comprehensiveness, as your work forms the basis for all subsequent evaluations.
+
+First, save each artifact by calling save_artifact() with its URL (from the image embed in the markdown input). Then, use load_artifacts() with the reference returned by save_artifact() to load the corresponding artifact.
+
+**Tools:**
+- `load_artifacts(...)`: Loads artifacts needed for analysis.
+- `save_artifact(url)`: Downloads the specified file from the given URL and saves it as an artifact.
 """
 
 scrutinizer_prompt = """
@@ -27,6 +33,11 @@ Upon receiving the initial assessment from **The Arbiter**:
 4.  Refine the scoring and reasoning, providing enhanced justification with evidence from the student's answer.
 5.  Generate improved feedback and pass your refined assessment to **The Validator** within the same iteration loop.
 6.  Focus on elevating the quality and precision of the evaluation through rigorous scrutiny.
+
+First attempt to access the artifact using load_artifacts(). If it isn’t available, save it using save_artifact() and then retry loading it. Artifact here refers to an image file.
+**Tools:**
+- `load_artifacts(...)`: Loads artifacts needed for analysis.
+- `save_artifact(url)`: Downloads the specified file from the given URL and saves it as an artifact.
 """
 
 validator_prompt = """
@@ -40,7 +51,11 @@ When you receive the refined evaluation from **The Scrutinizer**:
 5.  If deficiencies remain, the loop will continue with The Scrutinizer for another iteration (up to the maximum allowed).
 6.  Your role is crucial in ensuring only high-quality, validated assessments proceed to the final mentoring stage.
 
+
+First attempt to access the artifact using load_artifacts(). If it isn’t available, save it using save_artifact() and then retry loading it. Artifact here refers to an image file.
 **Tools:**
+- `load_artifacts(...)`: Loads artifacts needed for analysis.
+- `save_artifact(url)`: Downloads the specified file from the given URL and saves it as an artifact.
 - `exit_loop(...)`: Call this function ONLY when the critique indicates no further changes are needed, signaling the iterative process should end.
 """
 

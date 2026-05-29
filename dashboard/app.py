@@ -9,6 +9,7 @@ import time
 import os
 import requests
 import redis
+import streamlit.components.v1 as components
 from datetime import datetime
 from typing import Dict, Optional, List, Any
 import pandas as pd
@@ -45,61 +46,581 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Custom CSS for better UI
+# Custom CSS for a polished, colorful Streamlit UI
 st.markdown("""
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+    :root {
+        --google-blue: #4285F4;
+        --google-red: #EA4335;
+        --google-yellow: #FBBC04;
+        --google-green: #34A853;
+        --ink: #202124;
+        --muted: #5f6368;
+        --heading: #3c4043;
+        --app-bg: #f8fbff;
+        --surface: rgba(255, 255, 255, 0.88);
+        --surface-soft: rgba(255, 255, 255, 0.72);
+        --surface-strong: rgba(255, 255, 255, 0.94);
+        --input-bg: rgba(255, 255, 255, 0.92);
+        --input-focus-bg: #ffffff;
+        --placeholder: #6f7277;
+        --blue-ink: #174ea6;
+        --yellow-ink: #7a4f00;
+        --green-ink: #137333;
+        --red-ink: #a50e0e;
+        --line: rgba(32, 33, 36, 0.1);
+        --shadow: 0 18px 45px rgba(60, 64, 67, 0.16);
+        --soft-shadow: 0 8px 24px rgba(60, 64, 67, 0.10);
+        --app-gradient:
+            linear-gradient(145deg, rgba(66, 133, 244, 0.13), rgba(255, 255, 255, 0) 34%),
+            linear-gradient(235deg, rgba(251, 188, 4, 0.16), rgba(255, 255, 255, 0) 38%),
+            linear-gradient(340deg, rgba(52, 168, 83, 0.13), rgba(234, 67, 53, 0.07) 52%, rgba(255, 255, 255, 0) 70%);
+        --sidebar-gradient:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 251, 255, 0.9)),
+            linear-gradient(135deg, rgba(66, 133, 244, 0.10), rgba(251, 188, 4, 0.10));
+        --hero-gradient:
+            linear-gradient(100deg, rgba(255,255,255,0.94), rgba(255,255,255,0.72)),
+            linear-gradient(135deg, rgba(66, 133, 244, 0.22), rgba(251, 188, 4, 0.24) 46%, rgba(52, 168, 83, 0.18));
+        --metric-gradient:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 251, 255, 0.84)),
+            linear-gradient(135deg, rgba(66, 133, 244, 0.12), rgba(52, 168, 83, 0.08));
+    }
+
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --google-blue: #8ab4f8;
+            --google-red: #f28b82;
+            --google-yellow: #fdd663;
+            --google-green: #81c995;
+            --ink: #f1f3f4;
+            --muted: #c1c7d0;
+            --heading: #e8eaed;
+            --app-bg: #0f1117;
+            --surface: rgba(27, 31, 43, 0.86);
+            --surface-soft: rgba(30, 34, 47, 0.78);
+            --surface-strong: rgba(35, 39, 52, 0.94);
+            --input-bg: rgba(19, 22, 31, 0.96);
+            --input-focus-bg: rgba(24, 28, 39, 0.98);
+            --placeholder: #aeb4bf;
+            --blue-ink: #d2e3fc;
+            --yellow-ink: #fef2c0;
+            --green-ink: #ceead6;
+            --red-ink: #fad2cf;
+            --line: rgba(232, 234, 237, 0.14);
+            --shadow: 0 24px 58px rgba(0, 0, 0, 0.45);
+            --soft-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+            --app-gradient:
+                linear-gradient(145deg, rgba(138, 180, 248, 0.18), rgba(15, 17, 23, 0) 34%),
+                linear-gradient(235deg, rgba(253, 214, 99, 0.13), rgba(15, 17, 23, 0) 40%),
+                linear-gradient(340deg, rgba(129, 201, 149, 0.13), rgba(242, 139, 130, 0.09) 54%, rgba(15, 17, 23, 0) 72%);
+            --sidebar-gradient:
+                linear-gradient(180deg, rgba(28, 32, 43, 0.96), rgba(19, 22, 31, 0.93)),
+                linear-gradient(135deg, rgba(138, 180, 248, 0.12), rgba(253, 214, 99, 0.08));
+            --hero-gradient:
+                linear-gradient(100deg, rgba(31, 35, 48, 0.96), rgba(21, 24, 34, 0.84)),
+                linear-gradient(135deg, rgba(138, 180, 248, 0.19), rgba(253, 214, 99, 0.14) 46%, rgba(129, 201, 149, 0.16));
+            --metric-gradient:
+                linear-gradient(180deg, rgba(31, 35, 48, 0.94), rgba(21, 24, 34, 0.90)),
+                linear-gradient(135deg, rgba(138, 180, 248, 0.14), rgba(129, 201, 149, 0.09));
+        }
+    }
+
+    html[data-theme="dark"],
+    body[data-theme="dark"],
+    .stApp[data-theme="dark"],
+    [data-theme="dark"],
+    html[data-aegis-theme="dark"],
+    html[data-aegis-theme="dark"] body,
+    html[data-aegis-theme="dark"] .stApp {
+        --google-blue: #8ab4f8;
+        --google-red: #f28b82;
+        --google-yellow: #fdd663;
+        --google-green: #81c995;
+        --ink: #f1f3f4;
+        --muted: #c1c7d0;
+        --heading: #e8eaed;
+        --app-bg: #0f1117;
+        --surface: rgba(27, 31, 43, 0.86);
+        --surface-soft: rgba(30, 34, 47, 0.78);
+        --surface-strong: rgba(35, 39, 52, 0.94);
+        --input-bg: rgba(19, 22, 31, 0.96);
+        --input-focus-bg: rgba(24, 28, 39, 0.98);
+        --placeholder: #aeb4bf;
+        --blue-ink: #d2e3fc;
+        --yellow-ink: #fef2c0;
+        --green-ink: #ceead6;
+        --red-ink: #fad2cf;
+        --line: rgba(232, 234, 237, 0.14);
+        --shadow: 0 24px 58px rgba(0, 0, 0, 0.45);
+        --soft-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+        --app-gradient:
+            linear-gradient(145deg, rgba(138, 180, 248, 0.18), rgba(15, 17, 23, 0) 34%),
+            linear-gradient(235deg, rgba(253, 214, 99, 0.13), rgba(15, 17, 23, 0) 40%),
+            linear-gradient(340deg, rgba(129, 201, 149, 0.13), rgba(242, 139, 130, 0.09) 54%, rgba(15, 17, 23, 0) 72%);
+        --sidebar-gradient:
+            linear-gradient(180deg, rgba(28, 32, 43, 0.96), rgba(19, 22, 31, 0.93)),
+            linear-gradient(135deg, rgba(138, 180, 248, 0.12), rgba(253, 214, 99, 0.08));
+        --hero-gradient:
+            linear-gradient(100deg, rgba(31, 35, 48, 0.96), rgba(21, 24, 34, 0.84)),
+            linear-gradient(135deg, rgba(138, 180, 248, 0.19), rgba(253, 214, 99, 0.14) 46%, rgba(129, 201, 149, 0.16));
+        --metric-gradient:
+            linear-gradient(180deg, rgba(31, 35, 48, 0.94), rgba(21, 24, 34, 0.90)),
+            linear-gradient(135deg, rgba(138, 180, 248, 0.14), rgba(129, 201, 149, 0.09));
+    }
+
+    html[data-aegis-theme="light"],
+    html[data-aegis-theme="light"] body,
+    html[data-aegis-theme="light"] .stApp {
+        --google-blue: #4285F4;
+        --google-red: #EA4335;
+        --google-yellow: #FBBC04;
+        --google-green: #34A853;
+        --ink: #202124;
+        --muted: #5f6368;
+        --heading: #3c4043;
+        --app-bg: #f8fbff;
+        --surface: rgba(255, 255, 255, 0.88);
+        --surface-soft: rgba(255, 255, 255, 0.72);
+        --surface-strong: rgba(255, 255, 255, 0.94);
+        --input-bg: rgba(255, 255, 255, 0.92);
+        --input-focus-bg: #ffffff;
+        --placeholder: #6f7277;
+        --blue-ink: #174ea6;
+        --yellow-ink: #7a4f00;
+        --green-ink: #137333;
+        --red-ink: #a50e0e;
+        --line: rgba(32, 33, 36, 0.1);
+        --shadow: 0 18px 45px rgba(60, 64, 67, 0.16);
+        --soft-shadow: 0 8px 24px rgba(60, 64, 67, 0.10);
+        --app-gradient:
+            linear-gradient(145deg, rgba(66, 133, 244, 0.13), rgba(255, 255, 255, 0) 34%),
+            linear-gradient(235deg, rgba(251, 188, 4, 0.16), rgba(255, 255, 255, 0) 38%),
+            linear-gradient(340deg, rgba(52, 168, 83, 0.13), rgba(234, 67, 53, 0.07) 52%, rgba(255, 255, 255, 0) 70%);
+        --sidebar-gradient:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 251, 255, 0.9)),
+            linear-gradient(135deg, rgba(66, 133, 244, 0.10), rgba(251, 188, 4, 0.10));
+        --hero-gradient:
+            linear-gradient(100deg, rgba(255,255,255,0.94), rgba(255,255,255,0.72)),
+            linear-gradient(135deg, rgba(66, 133, 244, 0.22), rgba(251, 188, 4, 0.24) 46%, rgba(52, 168, 83, 0.18));
+        --metric-gradient:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 251, 255, 0.84)),
+            linear-gradient(135deg, rgba(66, 133, 244, 0.12), rgba(52, 168, 83, 0.08));
+    }
+
+    html, body, [class*="css"] {
+        font-family: "Google Sans", "Inter", sans-serif;
+    }
+
+    .stApp {
+        color: var(--ink);
+        background: var(--app-gradient), var(--app-bg);
+    }
+
+    .block-container {
+        max-width: 1180px;
+        padding-top: 2rem;
+        padding-bottom: 3rem;
+    }
+
+    header[data-testid="stHeader"] {
+        background: transparent;
+    }
+
+    section[data-testid="stSidebar"] {
+        background: var(--sidebar-gradient);
+        border-right: 1px solid var(--line);
+    }
+
+    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h2 {
+        color: var(--ink);
+        font-size: 1rem;
+        letter-spacing: 0;
+    }
+
+    .aegis-hero {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 2.2rem 2.4rem;
+        margin-bottom: 1.4rem;
+        background: var(--hero-gradient);
+        box-shadow: var(--shadow);
+    }
+
+    .aegis-hero:before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+            repeating-linear-gradient(90deg, color-mix(in srgb, var(--google-blue) 16%, transparent) 0 1px, transparent 1px 44px),
+            repeating-linear-gradient(0deg, color-mix(in srgb, var(--google-green) 13%, transparent) 0 1px, transparent 1px 44px);
+        mask-image: linear-gradient(90deg, transparent, #000 16%, #000 78%, transparent);
+        pointer-events: none;
+    }
+
+    .aegis-hero:after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        height: 5px;
+        background: linear-gradient(90deg, var(--google-blue), var(--google-red), var(--google-yellow), var(--google-green));
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 1;
+    }
+
     .main-header {
-        font-size: 3rem;
-        font-weight: bold;
-        color: #1f77b4;
-        text-align: center;
-        margin-bottom: 1rem;
+        font-size: clamp(2.7rem, 7vw, 5.8rem);
+        line-height: 0.95;
+        font-weight: 800;
+        letter-spacing: 0;
+        color: var(--ink);
+        margin-bottom: 0.65rem;
     }
+
+    .main-header .g-blue { color: var(--google-blue); }
+    .main-header .g-red { color: var(--google-red); }
+    .main-header .g-yellow { color: var(--google-yellow); }
+    .main-header .g-green { color: var(--google-green); }
+
     .sub-header {
-        font-size: 1.2rem;
-        color: #666;
-        text-align: center;
-        margin-bottom: 2rem;
+        max-width: 760px;
+        font-size: 1.08rem;
+        color: var(--muted);
+        margin-bottom: 1rem;
+        line-height: 1.6;
     }
+
+    .hero-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+        margin-top: 1.2rem;
+    }
+
+    .hero-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        min-height: 32px;
+        padding: 0.36rem 0.72rem;
+        border-radius: 8px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.88rem;
+        font-weight: 600;
+        box-shadow: 0 3px 12px rgba(60, 64, 67, 0.08);
+    }
+
+    .section-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.34rem 0.68rem;
+        border-radius: 8px;
+        background: color-mix(in srgb, var(--google-blue) 14%, transparent);
+        border: 1px solid color-mix(in srgb, var(--google-blue) 28%, transparent);
+        color: var(--blue-ink);
+        font-weight: 700;
+        font-size: 0.82rem;
+        margin-bottom: 0.55rem;
+    }
+
+    .stMarkdown h3 {
+        color: var(--ink);
+        font-weight: 800;
+        letter-spacing: 0;
+    }
+
+    .stMarkdown h4,
+    .stMarkdown h5 {
+        color: var(--heading);
+        font-weight: 700;
+    }
+
     .stTabs [data-baseweb="tab-list"] {
-        gap: 2rem;
+        gap: 0.45rem;
+        padding: 0.35rem;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface-soft);
+        box-shadow: 0 5px 18px rgba(60, 64, 67, 0.08);
     }
+
     .stTabs [data-baseweb="tab"] {
         height: 3rem;
         white-space: pre-wrap;
-        font-size: 1.1rem;
+        border-radius: 8px;
+        color: var(--muted);
+        font-size: 1rem;
+        font-weight: 700;
+        padding-inline: 1rem;
+        transition: all 160ms ease;
     }
+
+    .stTabs [data-baseweb="tab"]:hover {
+        background: color-mix(in srgb, var(--google-blue) 12%, transparent);
+        color: var(--ink);
+    }
+
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, color-mix(in srgb, var(--google-blue) 20%, transparent), color-mix(in srgb, var(--google-green) 14%, transparent));
+        color: var(--blue-ink);
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--google-blue) 28%, transparent);
+    }
+
+    div[data-testid="stForm"] {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 1.2rem 1.25rem 1.35rem;
+        background: var(--surface);
+        box-shadow: var(--soft-shadow);
+    }
+
+    div[data-testid="stTextInput"] input,
+    div[data-testid="stTextArea"] textarea {
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: var(--input-bg);
+        color: var(--ink);
+        transition: border-color 140ms ease, box-shadow 140ms ease, background 140ms ease;
+    }
+
+    div[data-testid="stTextInput"] input::placeholder,
+    div[data-testid="stTextArea"] textarea::placeholder {
+        color: var(--placeholder);
+        opacity: 0.82;
+    }
+
+    div[data-testid="stTextInput"] input:focus,
+    div[data-testid="stTextArea"] textarea:focus {
+        border-color: var(--google-blue);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--google-blue) 24%, transparent);
+        background: var(--input-focus-bg);
+    }
+
+    label[data-testid="stWidgetLabel"] p {
+        color: var(--heading);
+        font-weight: 700;
+    }
+
+    .stButton > button,
+    .stDownloadButton > button,
+    div[data-testid="stFormSubmitButton"] button {
+        border-radius: 8px;
+        border: 0;
+        background: linear-gradient(135deg, var(--google-blue), #6d9df7);
+        color: #fff;
+        font-weight: 800;
+        letter-spacing: 0;
+        box-shadow: 0 10px 22px color-mix(in srgb, var(--google-blue) 30%, transparent);
+        transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
+    }
+
+    .stButton > button:hover,
+    .stDownloadButton > button:hover,
+    div[data-testid="stFormSubmitButton"] button:hover {
+        color: #fff;
+        transform: translateY(-1px);
+        filter: saturate(1.08);
+        box-shadow: 0 14px 30px color-mix(in srgb, var(--google-blue) 36%, transparent);
+    }
+
+    .stButton > button:active,
+    .stDownloadButton > button:active,
+    div[data-testid="stFormSubmitButton"] button:active {
+        transform: translateY(0);
+    }
+
+    div[data-testid="stFileUploader"] section {
+        border-radius: 8px;
+        border-color: color-mix(in srgb, var(--google-blue) 32%, transparent);
+        background:
+            linear-gradient(135deg, color-mix(in srgb, var(--google-blue) 10%, transparent), color-mix(in srgb, var(--google-yellow) 10%, transparent)),
+            var(--surface);
+    }
+
+    div[data-testid="stExpander"] {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+        background: var(--surface);
+        box-shadow: 0 6px 18px rgba(60, 64, 67, 0.08);
+    }
+
+    div[data-testid="stExpander"] details summary {
+        font-weight: 800;
+        color: var(--heading);
+    }
+
+    div[data-testid="stAlert"] {
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        box-shadow: 0 6px 18px rgba(60, 64, 67, 0.07);
+    }
+
+    div[data-testid="stDataFrame"] {
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: var(--soft-shadow);
+    }
+
+    code {
+        border-radius: 8px;
+        color: var(--blue-ink);
+        background: color-mix(in srgb, var(--google-blue) 13%, transparent);
+    }
+
     .success-box {
         padding: 1rem;
-        border-radius: 0.5rem;
-        background-color: #d4edda;
-        border: 1px solid #c3e6cb;
-        color: #155724;
+        border-radius: 8px;
+        background-color: color-mix(in srgb, var(--google-green) 17%, transparent);
+        border: 1px solid color-mix(in srgb, var(--google-green) 32%, transparent);
+        color: var(--green-ink);
     }
+
     .warning-box {
         padding: 1rem;
-        border-radius: 0.5rem;
-        background-color: #fff3cd;
-        border: 1px solid #ffeaa7;
-        color: #856404;
+        border-radius: 8px;
+        background-color: color-mix(in srgb, var(--google-yellow) 20%, transparent);
+        border: 1px solid color-mix(in srgb, var(--google-yellow) 36%, transparent);
+        color: var(--yellow-ink);
     }
+
     .error-box {
         padding: 1rem;
-        border-radius: 0.5rem;
-        background-color: #f8d7da;
-        border: 1px solid #f5c6cb;
-        color: #721c24;
+        border-radius: 8px;
+        background-color: color-mix(in srgb, var(--google-red) 16%, transparent);
+        border: 1px solid color-mix(in srgb, var(--google-red) 32%, transparent);
+        color: var(--red-ink);
     }
+
     .metric-card {
-        padding: 1.5rem;
-        border-radius: 0.5rem;
-        background-color: #f8f9fa;
-        border: 1px solid #dee2e6;
+        position: relative;
+        overflow: hidden;
+        padding: 1.2rem;
+        border-radius: 8px;
+        background: var(--metric-gradient);
+        border: 1px solid var(--line);
+        text-align: left;
+        color: var(--ink);
+        box-shadow: var(--soft-shadow);
+        min-height: 108px;
+    }
+
+    .metric-card:before {
+        content: "";
+        position: absolute;
+        inset: 0 0 auto 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--google-blue), var(--google-red), var(--google-yellow), var(--google-green));
+    }
+
+    .metric-card div:first-child {
+        color: var(--muted) !important;
+        font-size: 0.78rem !important;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .metric-card div:last-child {
+        color: var(--ink);
+        font-size: clamp(1.25rem, 2vw, 1.65rem) !important;
+        font-weight: 800 !important;
+        margin-top: 0.35rem;
+        line-height: 1.2;
+    }
+
+    .footer-note {
         text-align: center;
-        color: #333;
+        color: var(--muted);
+        padding: 1.2rem 0 0.25rem;
+        font-size: 0.92rem;
+    }
+
+    hr {
+        border-color: var(--line);
+        margin: 1.6rem 0;
+    }
+
+    @media (max-width: 720px) {
+        .block-container {
+            padding-inline: 1rem;
+        }
+
+        .aegis-hero {
+            padding: 1.45rem;
+        }
+
+        .stTabs [data-baseweb="tab"] {
+            padding-inline: 0.65rem;
+            font-size: 0.9rem;
+        }
     }
 </style>
 """, unsafe_allow_html=True)
+
+
+components.html(
+    """
+    <script>
+    (() => {
+        const rootWindow = window.parent;
+        const rootDocument = rootWindow.document;
+
+        const parseRgb = (value) => {
+            const match = value && value.match(/rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)/i);
+            return match ? match.slice(1, 4).map(Number) : null;
+        };
+
+        const luminance = ([r, g, b]) => {
+            const [sr, sg, sb] = [r, g, b].map((channel) => {
+                const value = channel / 255;
+                return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+            });
+            return 0.2126 * sr + 0.7152 * sg + 0.0722 * sb;
+        };
+
+        const syncAegisTheme = () => {
+            const bodyStyles = rootWindow.getComputedStyle(rootDocument.body);
+            const sampledColor = parseRgb(bodyStyles.backgroundColor);
+            if (!sampledColor) return;
+
+            const theme = luminance(sampledColor) < 0.45 ? "dark" : "light";
+            rootDocument.documentElement.dataset.aegisTheme = theme;
+        };
+
+        syncAegisTheme();
+        rootWindow.requestAnimationFrame(syncAegisTheme);
+
+        const observer = new MutationObserver(syncAegisTheme);
+        observer.observe(rootDocument.documentElement, {
+            attributes: true,
+            attributeFilter: ["class", "style", "data-theme"]
+        });
+        observer.observe(rootDocument.body, {
+            attributes: true,
+            attributeFilter: ["class", "style", "data-theme"]
+        });
+
+        rootWindow.addEventListener("storage", syncAegisTheme);
+        rootWindow.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", syncAegisTheme);
+        setInterval(syncAegisTheme, 500);
+    })();
+    </script>
+    """,
+    height=0,
+    width=0,
+)
 
 # Initialize session state
 if 'grading_history' not in st.session_state:
@@ -153,9 +674,25 @@ def process_events_to_result(events: List[Dict]) -> Dict:
 
 def render_header():
     """Render the dashboard header."""
-    st.markdown('<div class="main-header">🎓 AEGIS</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="sub-header">Automated Educational Grading Intelligent System</div>',
+        """
+        <div class="aegis-hero">
+            <div class="hero-content">
+                <div class="main-header">
+                    <span class="g-blue">A</span><span class="g-red">E</span><span class="g-yellow">G</span><span class="g-blue">I</span><span class="g-green">S</span>
+                </div>
+                <div class="sub-header">
+                    Automated Educational Grading Intelligent System for thoughtful, multi-agent assessment.
+                </div>
+                <div class="hero-chips">
+                    <span class="hero-chip">✨ Assistive grading</span>
+                    <span class="hero-chip">🔎 Rubric-aware review</span>
+                    <span class="hero-chip">📚 Mentor feedback</span>
+                    <span class="hero-chip">🌈 Clear insights</span>
+                </div>
+            </div>
+        </div>
+        """,
         unsafe_allow_html=True
     )
     
@@ -178,7 +715,8 @@ def format_grading_result(result: Dict) -> None:
         final_score = eval_data.get("final_score", "N/A")
         timestamp = result.get("timestamp", datetime.now().isoformat())
         
-        st.markdown("### 📊 Grading Results")
+        st.markdown('<div class="section-kicker">📊 Final readout</div>', unsafe_allow_html=True)
+        st.markdown("### Grading Results")
         
         col1, col2, col3 = st.columns(3)
         with col1:
@@ -208,7 +746,7 @@ def format_grading_result(result: Dict) -> None:
         st.markdown("---")
         
         # Display detailed feedback
-        st.markdown("#### 📝 Evaluation Details")
+        st.markdown("#### Evaluation Details")
         
         with st.expander("🔍 Score Reasoning", expanded=True):
             st.markdown(eval_data.get("score_reasoning", "No reasoning provided."))
@@ -230,7 +768,8 @@ def format_grading_result(result: Dict) -> None:
         return
 
     # Extract key information (Legacy format support)
-    st.markdown("### 📊 Grading Results")
+    st.markdown('<div class="section-kicker">📊 Final readout</div>', unsafe_allow_html=True)
+    st.markdown("### Grading Results")
     
     # Display in columns
     col1, col2, col3 = st.columns(3)
@@ -347,8 +886,9 @@ def process_ocr_upload(files, assignment_id):
 
 def render_ocr_tab():
     """Render the OCR and grading tab."""
-    st.markdown("### 📄 OCR & Grade")
-    st.markdown("Upload two PDF files to process them via OCR and then grade the result.")
+    st.markdown('<div class="section-kicker">📄 OCR Pipeline</div>', unsafe_allow_html=True)
+    st.markdown("### OCR & Grade")
+    st.caption("Upload two PDFs, collect the processed script, and evaluate it with the same AEGIS flow.")
 
     with st.form("ocr_submission_form"):
         # Assignment ID
@@ -379,7 +919,8 @@ def render_ocr_tab():
             process_ocr_upload(uploaded_files, assignment_id)
 
     st.markdown("---")
-    st.markdown("### 📋 Available OCR Results")
+    st.markdown('<div class="section-kicker">📋 Processed scripts</div>', unsafe_allow_html=True)
+    st.markdown("### Available OCR Results")
     
     col_refresh, _ = st.columns([1, 4])
     with col_refresh:
@@ -424,7 +965,8 @@ def render_ocr_tab():
         
         # Evaluation Section for Selected Key
         if 'selected_ocr_key' in st.session_state and st.session_state.selected_ocr_key:
-            st.markdown(f"### 🚀 Evaluate: `{st.session_state.selected_ocr_key}`")
+            st.markdown('<div class="section-kicker">🚀 Ready for review</div>', unsafe_allow_html=True)
+            st.markdown(f"### Evaluate: `{st.session_state.selected_ocr_key}`")
             
             # Fetch content
             redis_content = get_redis_value(st.session_state.selected_ocr_key)
@@ -478,7 +1020,8 @@ def render_ocr_tab():
 
 def render_submission_tab():
     """Render the answer submission form."""
-    st.markdown("### 📝 Submit Answer Script")
+    st.markdown('<div class="section-kicker">📝 Guided submission</div>', unsafe_allow_html=True)
+    st.markdown("### Submit Answer Script")
     
     with st.form("answer_submission_form"):
         # Assignment ID
@@ -543,7 +1086,8 @@ def render_submission_tab():
 
 def render_results_tab():
     """Render the grading results view."""
-    st.markdown("### 📊 Grading Results")
+    st.markdown('<div class="section-kicker">📊 Assessment output</div>', unsafe_allow_html=True)
+    st.markdown("### Grading Results")
     
     if st.session_state.grading_result:
         format_grading_result(st.session_state.grading_result)
@@ -563,7 +1107,8 @@ def render_results_tab():
 
 def render_history_tab():
     """Render the grading history view."""
-    st.markdown("### 📚 Grading History")
+    st.markdown('<div class="section-kicker">📚 Session memory</div>', unsafe_allow_html=True)
+    st.markdown("### Grading History")
     
     if not st.session_state.grading_history:
         st.info("ℹ️ No grading history yet. Submit answers to build your history.")
@@ -598,7 +1143,8 @@ def render_history_tab():
 
 def render_analytics_tab():
     """Render analytics and statistics."""
-    st.markdown("### 📈 Analytics & Statistics")
+    st.markdown('<div class="section-kicker">📈 Learning signals</div>', unsafe_allow_html=True)
+    st.markdown("### Analytics & Statistics")
     
     if not st.session_state.grading_history:
         st.info("ℹ️ No data available yet. Submit answers to see analytics.")
